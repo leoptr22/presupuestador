@@ -21,13 +21,13 @@ const printPrices = (gEco, gUv, gPlus, dEco, dUv, dPlus, pEco, pUv, pPlus) => ({
 
 export const materials = [
   // Impresión: mínimo 50 × 50 cm
-  { id:'papel', name:'Papel Blueback', category:'Impresión por m²', unit:'m²', prices:printPrices(6900,14500,20600,12600,20300,28800,16400,26400,37400), desc:'Papel para cartelería de corta duración', popular:true },
+  { id:'papel', name:'Papel Blueback', category:'Impresión por m²', unit:'m²', prices:printPrices(6900,14500,20600,12600,20300,28800,16400,26400,37400), desc:'Papel para cartelería de corta duración', popular:false },
   { id:'vinilo-promo', name:'Vinilo PROMO', category:'Impresión por m²', unit:'m²', prices:printPrices(10000,16000,22400,14100,22300,31400,18400,29000,40800), desc:'Jaspe, Winflex, American, Adhoc, etc.', popular:true },
   { id:'vinilo-lg', name:'Vinilo LG 1800 / Inflex 100 mic', category:'Impresión por m²', unit:'m²', prices:printPrices(14000,19500,25700,19900,27500,35900,25800,35700,46700), desc:'Vinilo autoadhesivo de uso general' },
-  { id:'oracal', name:'Oracal 3164', category:'Impresión por m²', unit:'m²', prices:printPrices(21200,27000,33300,30100,37800,46500,39100,49100,60500), desc:'Vinilo de mayor durabilidad', popular:true },
+  { id:'oracal', name:'Oracal 3164', category:'Impresión por m²', unit:'m²', prices:printPrices(21200,27000,33300,30100,37800,46500,39100,49100,60500), desc:'Vinilo de mayor durabilidad', popular:false },
   { id:'micro', name:'Vinilo microperforado', category:'Impresión por m²', unit:'m²', prices:printPrices(17000,23400,29900,24700,32800,41800,32100,42600,54300), desc:'Permite visión desde el interior' },
   { id:'clear', name:'Vinilo Clear / transparente LG', category:'Impresión por m²', unit:'m²', prices:printPrices(11000,17000,23400,15500,23700,32800,20200,30800,42600), desc:'Para vidrieras y fondos transparentes' },
-  { id:'lona-front', name:'Lona Front 13 oz', category:'Impresión por m²', unit:'m²', prices:printPrices(11700,17700,24200,15600,24800,33800,21600,32200,43800), desc:'Lona resistente para carteles y banners', popular:true },
+  { id:'lona-front', name:'Lona Front 13 oz', category:'Impresión por m²', unit:'m²', prices:printPrices(11700,17700,24200,15600,24800,33800,21600,32200,43800), desc:'Lona resistente para carteles y banners', popular:false },
   { id:'lona-back', name:'Lona Back Light', category:'Impresión por m²', unit:'m²', prices:printPrices(16400,25000,32100,23200,35000,44900,30200,45500,58100), desc:'Para carteles retroiluminados' },
   { id:'lona-front7', name:'Lona Front 7 oz', category:'Impresión por m²', unit:'m²', prices:printPrices(9700,15500,21700,13700,21600,30400,17800,28100,39500), desc:'Lona liviana para interior' },
   { id:'esmerilado-imp', name:'Esmerilado impreso', category:'Impresión por m²', unit:'m²', prices:printPrices(18400,24600,30900,26100,34100,43200,33800,44400,56100), desc:'Privacidad con diseño personalizado' },
