@@ -102,7 +102,7 @@ function App() {
 
     <main>
       <section className="intro">
-        <div><p className="eyebrow">OBTENÉ UNA COTIZACIÓN ESTIMADA DE TU TRABAJO EN GRAN FORMATO</p><h1>Armá tu proyecto, <em>paso a paso.</em></h1><p>Ante cualquier inquietud, no dudes en contactarnos o acercarte a nuestro local.</p></div>
+        <div><p className="eyebrow">OBTENÉ UNA COTIZACIÓN ESTIMADA DE TU TRABAJO EN GRAN FORMATO</p><h1>Cotiza tu proyecto, <em>paso a paso.</em></h1><p>Ante cualquier inquietud, no dudes en contactarnos o acercarte a nuestro local.</p></div>
         <div className="step-line" aria-label="Pasos"><span className="active">1 <b>Impresión</b></span><i></i><span className="active">2 <b>Componentes</b></span><i></i><span className="active">3 <b>Total</b></span></div>
       </section>
 
