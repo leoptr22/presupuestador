@@ -155,7 +155,7 @@ function App() {
         </section>
 
         <aside className="quote">
-          <div className="quote-head"><span><small>PRESUPUESTO FUSIONADO</small><b>Detalle del trabajo</b></span><i>ARS</i></div>
+          <div className="quote-head"><span><small>PRESUPUESTO FUSIONADO</small><b>Detalle del trabajo</b></span><i>$</i></div>
           <div className="preview"><span className="preview-art"><img src="/logo-rojas.png" alt="Rojas Impresiones" /></span><div><small>COMPOSICIÓN SELECCIONADA</small><b>{selected.length} {selected.length === 1 ? 'componente' : 'componentes'}</b><p>{technologyLabel}{hasAreaItems ? ` · ${width || 0} × ${height || 0} cm` : ''}{hasLinearItems ? ` · ${calc.ml} ml` : ''}</p></div></div>
           <div className="line-items">
             {calc.lines.length ? calc.lines.map(line => <div key={line.id} className={line.lineTotal == null ? 'unpriced-line' : ''}><span><b>{line.name}</b><small>{line.billingLabel} · {line.unitPrice == null ? 'sin precio' : `${money.format(line.unitPrice)} / ${line.unit}`}</small></span><strong>{line.lineTotal == null ? 'Consultar' : money.format(line.lineTotal)}</strong></div>) : <p>Agregá componentes para calcular el total.</p>}
@@ -166,7 +166,7 @@ function App() {
             {hasLinearItems && <div><dt>Metros lineales</dt><dd>{calc.ml.toLocaleString('es-AR', { maximumFractionDigits: 2 })} ml</dd></div>}
             <div><dt>Cantidad</dt><dd>{calc.q} {calc.q === 1 ? 'unidad' : 'unidades'}</dd></div>
           </dl>
-          <div className="total"><span><small>TOTAL DEL TRABAJO</small><b>{money.format(calc.total)}</b></span><small>Precio sin IVA</small></div>
+          <div className="total"><span><small>TOTAL DEL TRABAJO</small><b>{money.format(calc.total)}</b></span></div>
           {calc.unavailable > 0 && <p className="price-warning">Hay {calc.unavailable} {calc.unavailable === 1 ? 'ítem sin precio' : 'ítems sin precio'} en esta lista.</p>}
           <p className="validity"><Icon name="check" size={16}/> Todos los componentes están fusionados</p>
           <button className="primary" onClick={copyQuote} disabled={!selected.length}><Icon name={copied ? 'check' : 'copy'}/>{copied ? '¡Presupuesto copiado!' : 'Copiar presupuesto'}</button>
