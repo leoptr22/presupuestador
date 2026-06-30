@@ -153,6 +153,9 @@ function App() {
     }
   }
 
+
+// generador de PDF
+
   async function generatePdf() {
     if (!validateCustomer()) return
     const doc = new jsPDF({ unit: 'mm', format: 'a4' })
@@ -297,7 +300,7 @@ function App() {
 
     <main>
       <section className="intro">
-        <div><p className="eyebrow">OBTENÉ UNA COTIZACIÓN ESTIMADA DE TU TRABAJO EN GRAN FORMATO</p><h1>Armá trabajos, <em>uno dentro de otro.</em></h1><p>Agregá cada parte al presupuesto conjunto y finalizalo cuando esté completo.</p></div>
+        <div><p className="eyebrow">OBTENÉ UNA COTIZACIÓN ESTIMADA DE TU TRABAJO EN GRAN FORMATO</p><h1>Armá tu proyecto, <em>paso a paso.</em></h1><p>Agregá cada parte al presupuesto conjunto y finalizalo cuando esté completo.</p></div>
         <div className="step-line" aria-label="Pasos"><span className="active">1 <b>Trabajo</b></span><i></i><span className="active">2 <b>Agregar</b></span><i></i><span className={finalized ? 'active' : ''}>3 <b>Finalizar</b></span></div>
       </section>
 
