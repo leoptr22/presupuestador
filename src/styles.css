@@ -48,3 +48,15 @@ main{max-width:1240px;margin:auto;padding:54px 24px 70px}.intro{display:flex;jus
 .linear-measure{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line)}
 .linear-measure>div{display:flex;align-items:end;gap:14px}.linear-measure label,.standalone-qty{font-size:11px;font-weight:600;color:#62767a}.linear-measure label>span,.standalone-qty>span{display:flex;border:1px solid #cad6d3;margin-top:7px;background:#fff;height:48px;width:230px}.linear-measure input,.standalone-qty input{width:100%;min-width:0;border:0;outline:0;padding:0 12px;font:700 18px Manrope;color:var(--ink)}.linear-measure label span b,.standalone-qty span b{border-left:1px solid var(--line);padding:0 10px;display:flex;align-items:center;color:#849396;font-size:11px}.linear-measure p{font-size:10px;color:#718486;margin:0 0 14px}.standalone-qty{display:block;margin-top:16px}
 @media(max-width:600px){.linear-measure>div{display:block}.linear-measure p{margin-top:8px}.linear-measure label>span,.standalone-qty>span{width:100%}}
+
+/* Presupuestos anidados */
+.add-job{margin-top:18px;width:100%;height:48px;border:0;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:12px;cursor:pointer;box-shadow:0 8px 18px rgba(20,47,56,.14)}
+.add-job:hover{background:#0f252c}.add-job:disabled{opacity:.45;cursor:not-allowed}
+.inline-warning{margin:10px 0 0;text-align:left}
+.nested-jobs{margin:0 16px 12px;border:1px solid var(--line);background:#fbfdfc;max-height:210px;overflow:auto}
+.nested-head{height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;border-bottom:1px solid var(--line)}
+.nested-head b{font:800 9px Manrope;text-transform:uppercase;letter-spacing:.1em;color:#667b7f}
+.nested-head button{border:0;background:transparent;color:#b02658;font-size:9px;font-weight:800;cursor:pointer}
+.nested-job{display:grid;grid-template-columns:1fr auto 26px;gap:8px;align-items:center;padding:9px 10px;border-bottom:1px solid #edf2f0}
+.nested-job:last-child{border-bottom:0}.nested-job span{display:flex;flex-direction:column;min-width:0}.nested-job b{font-size:10px}.nested-job small{font-size:8px;color:var(--muted);margin-top:2px}.nested-job strong{font:800 10px Manrope;color:var(--ink);white-space:nowrap}.nested-job button{width:24px;height:24px;border:1px solid #ead3dc;background:#fff;color:#b02658;display:grid;place-items:center;cursor:pointer}
+.quote .primary.finalize{background:var(--green);margin-bottom:8px}.quote .primary.finalize:hover{background:#108965}
