@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { jsPDF } from 'jspdf'
 import { materials, presets, profiles } from './data'
 import './styles.css'
 
@@ -34,7 +35,7 @@ function Icon({ name, size = 20 }) {
 
 function App() {
   const [profile, setProfile] = useState('publico')
-  const [selectedIds, setSelectedIds] = useState([''])
+  const [selectedIds, setSelectedIds] = useState(['vinilo-promo'])
   const [search, setSearch] = useState('')
   const [width, setWidth] = useState(100)
   const [height, setHeight] = useState(100)
@@ -44,7 +45,8 @@ function App() {
   const [uvMode, setUvMode] = useState('cmyk')
   const [jobs, setJobs] = useState([])
   const [finalized, setFinalized] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [customer, setCustomer] = useState({ name: '', phone: '', email: '', cuit: '' })
+  const [formErrors, setFormErrors] = useState({})
 
   const selected = useMemo(() => selectedIds.map(id => materials.find(m => m.id === id)).filter(Boolean), [selectedIds])
   const hasAreaItems = selected.some(item => !item.fixed && item.billing !== 'linear')
@@ -76,6 +78,7 @@ function App() {
       ml,
       q,
       technologyLabel,
+      profileKey: profile,
       profileLabel: profiles[profile]?.label ?? profile,
       lines,
       total: lines.reduce((sum, line) => sum + (line.lineTotal ?? 0), 0),
@@ -84,20 +87,23 @@ function App() {
   }, [width, height, linearMeters, quantity, selected, profile, technology, uvMode, technologyLabel])
 
   const combinedTotal = jobs.reduce((sum, job) => sum + job.total, 0)
-  const finalQuoteText = useMemo(() => {
-    const sourceJobs = jobs.length ? jobs : [{ ...calc, title: 'Trabajo 1' }]
-    const blocks = sourceJobs.map((job, index) => {
-      const lineText = job.lines.map(line => `  • ${line.name}: ${line.lineTotal == null ? 'Consultar' : money.format(line.lineTotal)} (${line.billingLabel})`).join('\n')
-      const measureText = [
-        job.lines.some(line => !line.fixed && line.billing !== 'linear') ? `Medida: ${job.width} × ${job.height} cm (${formatNumber(job.area)} m²)` : null,
-        job.lines.some(line => line.billing === 'linear') ? `Metros lineales: ${formatNumber(job.ml)} ml` : null,
-        `Cantidad: ${job.q}`,
-      ].filter(Boolean).join('\n')
-      return `TRABAJO ${index + 1}: ${job.title}\nLista: ${job.profileLabel}\nImpresión: ${job.technologyLabel}\n${measureText}\n${lineText}\nSubtotal: ${money.format(job.total)}`
-    }).join('\n\n')
-    const total = sourceJobs.reduce((sum, job) => sum + job.total, 0)
-    return `PRESUPUESTO · ROJAS IMPRESIONES\n\n${blocks}\n\nTOTAL GENERAL: ${money.format(total)}\n\nPrecios expresados en pesos. Validez: 7 días.`
-  }, [jobs, calc])
+  const sourceJobs = jobs.length ? jobs : [{ ...calc, title: 'Trabajo 1' }]
+  const quoteIsImprenta = sourceJobs.length > 0 && sourceJobs.every(job => job.profileKey === 'gremio')
+
+  function updateCustomer(field, value) {
+    setCustomer(current => ({ ...current, [field]: value }))
+    setFormErrors(current => ({ ...current, [field]: '' }))
+    setFinalized(false)
+  }
+
+  function validateCustomer() {
+    const errors = {}
+    if (!customer.name.trim()) errors.name = 'Ingresá el nombre y apellido.'
+    if (!customer.phone.trim()) errors.phone = 'Ingresá el teléfono.'
+    if (quoteIsImprenta && !customer.cuit.trim()) errors.cuit = 'Ingresá el CUIT para el perfil Imprenta.'
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
   function toggleMaterial(id) {
     setSelectedIds(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id])
@@ -128,23 +134,154 @@ function App() {
 
   function finalizeQuote() {
     if (!jobs.length && !selected.length) return
+    if (!validateCustomer()) return
     setFinalized(true)
   }
 
-  async function copyQuote() {
-    await navigator.clipboard.writeText(finalQuoteText)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1800)
+  async function logoDataUrl() {
+    try {
+      const response = await fetch('/logo-rojas.png')
+      const blob = await response.blob()
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+      })
+    } catch {
+      return null
+    }
   }
 
-  function downloadQuote() {
-    const blob = new Blob([finalQuoteText], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'presupuesto-conjunto-rojas.txt'
-    a.click()
-    URL.revokeObjectURL(url)
+  async function generatePdf() {
+    if (!validateCustomer()) return
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    const margin = 16
+    const contentWidth = pageWidth - margin * 2
+    const total = sourceJobs.reduce((sum, job) => sum + job.total, 0)
+    const profileNames = [...new Set(sourceJobs.map(job => job.profileLabel))].join(' / ')
+    const date = new Intl.DateTimeFormat('es-AR').format(new Date())
+    let y = 18
+
+    const ensureSpace = needed => {
+      if (y + needed <= pageHeight - 18) return
+      doc.addPage()
+      y = 18
+    }
+    const addPageNumber = () => {
+      const pages = doc.getNumberOfPages()
+      for (let page = 1; page <= pages; page += 1) {
+        doc.setPage(page)
+        doc.setDrawColor(220, 228, 225)
+        doc.line(margin, pageHeight - 13, pageWidth - margin, pageHeight - 13)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8)
+        doc.setTextColor(110, 126, 130)
+        doc.text('ROJAS IMPRESIONES · GRAN FORMATO', margin, pageHeight - 8)
+        doc.text(`Página ${page} de ${pages}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
+      }
+    }
+
+    const logo = await logoDataUrl()
+    if (logo) doc.addImage(logo, 'PNG', margin, 10, 48, 22, undefined, 'FAST')
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(20, 47, 56)
+    doc.setFontSize(19)
+    doc.text('PRESUPUESTO', pageWidth - margin, 17, { align: 'right' })
+    doc.setFontSize(9)
+    doc.setTextColor(109, 126, 130)
+    doc.text(`Fecha: ${date}`, pageWidth - margin, 23, { align: 'right' })
+    doc.text('Validez: 7 días', pageWidth - margin, 28, { align: 'right' })
+    y = 39
+
+    doc.setFillColor(20, 47, 56)
+    doc.rect(margin, y, contentWidth, 12, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(10)
+    doc.text(`PERFIL: ${profileNames.toUpperCase()}`, margin + 4, y + 7.7)
+    if (quoteIsImprenta) doc.text('MÁS IVA', pageWidth - margin - 4, y + 7.7, { align: 'right' })
+    y += 19
+
+    doc.setTextColor(20, 47, 56)
+    doc.setFontSize(11)
+    doc.text('DATOS DEL CLIENTE', margin, y)
+    y += 6
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    const clientLines = [
+      `Nombre y apellido: ${customer.name.trim()}`,
+      `Teléfono: ${customer.phone.trim()}`,
+      `Email: ${customer.email.trim() || '-'}`,
+      quoteIsImprenta ? `CUIT: ${customer.cuit.trim()}` : null,
+    ].filter(Boolean)
+    clientLines.forEach(line => { doc.text(line, margin, y); y += 5 })
+    y += 4
+
+    sourceJobs.forEach((job, index) => {
+      ensureSpace(35)
+      doc.setFillColor(239, 246, 244)
+      doc.rect(margin, y, contentWidth, 11, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(10)
+      doc.setTextColor(20, 47, 56)
+      doc.text(`TRABAJO ${index + 1}`, margin + 4, y + 7)
+      doc.text(money.format(job.total), pageWidth - margin - 4, y + 7, { align: 'right' })
+      y += 16
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8.5)
+      doc.setTextColor(91, 110, 114)
+      const hasArea = job.lines.some(line => !line.fixed && line.billing !== 'linear')
+      const hasLinear = job.lines.some(line => line.billing === 'linear')
+      const details = [
+        `Perfil: ${job.profileLabel} · Impresión: ${job.technologyLabel}`,
+        hasArea ? `Medida: ${job.width} × ${job.height} cm (${formatNumber(job.area)} m²) · Cantidad: ${job.q}` : `Cantidad: ${job.q}`,
+        hasLinear ? `Metros lineales: ${formatNumber(job.ml)} ml` : null,
+      ].filter(Boolean)
+      details.forEach(detail => { doc.text(detail, margin, y); y += 4.5 })
+      y += 2
+
+      job.lines.forEach(line => {
+        const nameLines = doc.splitTextToSize(line.name, 92)
+        const rowHeight = Math.max(8, nameLines.length * 4 + 3)
+        ensureSpace(rowHeight + 2)
+        doc.setDrawColor(230, 235, 233)
+        doc.line(margin, y + rowHeight, pageWidth - margin, y + rowHeight)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(32, 58, 65)
+        doc.text(nameLines, margin, y + 4)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(109, 126, 130)
+        doc.text(line.billingLabel, margin + 98, y + 4)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(32, 58, 65)
+        doc.text(line.lineTotal == null ? 'Consultar' : money.format(line.lineTotal), pageWidth - margin, y + 4, { align: 'right' })
+        y += rowHeight
+      })
+      y += 7
+    })
+
+    ensureSpace(28)
+    doc.setFillColor(214, 37, 102)
+    doc.rect(margin, y, contentWidth, 18, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.text(quoteIsImprenta ? 'TOTAL GENERAL · MÁS IVA' : 'TOTAL GENERAL', margin + 5, y + 7)
+    doc.setFontSize(16)
+    doc.text(money.format(total), pageWidth - margin - 5, y + 12, { align: 'right' })
+    y += 25
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8.5)
+    doc.setTextColor(92, 110, 114)
+    doc.text(quoteIsImprenta ? 'Precios expresados en pesos argentinos, más IVA.' : 'Precios expresados en pesos argentinos.', margin, y)
+    doc.text('El valor es estimativo y puede variar según los requisitos técnicos. Consultanos para confirmar el trabajo.', margin, y + 5)
+    addPageNumber()
+
+    const safeName = customer.name.trim().replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]+/g, '-').replace(/^-|-$/g, '') || 'cliente'
+    doc.save(`presupuesto-rojas-${safeName}.pdf`)
   }
 
   return <div className="app-shell">
@@ -221,8 +358,8 @@ function App() {
         </section>
 
         <aside className="quote">
-          <div className="quote-head"><span><small>PRESUPUESTO COMBINADO</small><b>{jobs.length ? `${jobs.length} trabajos agregados` : 'Trabajo actual'}</b></span><i>ARS</i></div>
-          <div className="preview"><span className="preview-art"><img src="/logo-rojas.png" alt="Rojas Impresiones" /></span><div><small>{finalized ? 'PRESUPUESTO FINALIZADO' : 'BORRADOR ARMADO'}</small><b>{jobs.length ? `${jobs.length} ${jobs.length === 1 ? 'trabajo' : 'trabajos'} en conjunto` : `${selected.length} componentes`}</b><p>{jobs.length ? `Total parcial · ${money.format(combinedTotal)}` : `${technologyLabel}${hasAreaItems ? ` · ${width || 0} × ${height || 0} cm` : ''}${hasLinearItems ? ` · ${formatNumber(calc.ml)} ml` : ''}`}</p></div></div>
+          <div className="quote-head"><span><small>PRESUPUESTO CONBINADO</small><b>{jobs.length ? `${jobs.length} trabajos agregados` : 'Trabajo actual'}</b></span><i>ARS</i></div>
+          <div className="preview"><span className="preview-art"><img src="/logo-rojas.png" alt="Rojas Impresiones" /></span><div><small>{finalized ? 'PRESUPUESTO FINALIZADO' : 'BORRADOR EN ARMADO'}</small><b>{jobs.length ? `${jobs.length} ${jobs.length === 1 ? 'trabajo' : 'trabajos'} en conjunto` : `${selected.length} componentes`}</b><p>{jobs.length ? `Total parcial · ${money.format(combinedTotal)}` : `${technologyLabel}${hasAreaItems ? ` · ${width || 0} × ${height || 0} cm` : ''}${hasLinearItems ? ` · ${formatNumber(calc.ml)} ml` : ''}`}</p></div></div>
 
           <div className="line-items">
             {calc.lines.length ? calc.lines.map(line => <div key={line.id} className={line.lineTotal == null ? 'unpriced-line' : ''}><span><b>{line.name}</b><small>{line.billingLabel} · {line.unitPrice == null ? 'sin precio' : `${money.format(line.unitPrice)} / ${line.unit}`}</small></span><strong>{line.lineTotal == null ? 'Consultar' : money.format(line.lineTotal)}</strong></div>) : <p>Agregá componentes para calcular el total.</p>}
@@ -242,11 +379,30 @@ function App() {
             </div>)}
           </div>}
 
+          <div className="customer-form">
+            <div className="customer-form-head"><b>Datos para el presupuesto</b><small>* Obligatorio</small></div>
+            <label className={formErrors.name ? 'field-error' : ''}>Nombre y apellido *
+              <input value={customer.name} onChange={e => updateCustomer('name', e.target.value)} placeholder="Nombre completo" />
+              {formErrors.name && <small>{formErrors.name}</small>}
+            </label>
+            <label className={formErrors.phone ? 'field-error' : ''}>Teléfono *
+              <input value={customer.phone} onChange={e => updateCustomer('phone', e.target.value)} placeholder="Ej. 11 1234-5678" inputMode="tel" />
+              {formErrors.phone && <small>{formErrors.phone}</small>}
+            </label>
+            <label>Email
+              <input value={customer.email} onChange={e => updateCustomer('email', e.target.value)} placeholder="nombre@email.com" type="email" />
+            </label>
+            {quoteIsImprenta && <label className={formErrors.cuit ? 'field-error' : ''}>CUIT *
+              <input value={customer.cuit} onChange={e => updateCustomer('cuit', e.target.value)} placeholder="XX-XXXXXXXX-X" inputMode="numeric" />
+              {formErrors.cuit && <small>{formErrors.cuit}</small>}
+            </label>}
+          </div>
+
           <div className="total"><span><small>{finalized ? 'TOTAL FINAL' : 'TOTAL EN ARMADO'}</small><b>{money.format(jobs.length ? combinedTotal : calc.total)}</b></span><small>{finalized ? 'Listo para enviar' : 'Agregá y finalizá'}</small></div>
+          {quoteIsImprenta && <p className="vat-note">Más IVA</p>}
           <p className="validity"><Icon name="check" size={16}/> Sin mínimo automático: se calcula por medida real</p>
-          <button className="primary finalize" onClick={finalizeQuote} disabled={!jobs.length && !selected.length}><Icon name="check"/> FINALIZAR PRESUPUESTO</button>
-          <button className="primary" onClick={copyQuote} disabled={!finalized}><Icon name={copied ? 'check' : 'copy'}/>{copied ? '¡Presupuesto copiado!' : 'Copiar presupuesto final'}</button>
-          <button className="secondary" onClick={downloadQuote} disabled={!finalized}><Icon name="download"/> Descargar presupuesto final</button>
+          <button className="primary finalize" onClick={finalizeQuote} disabled={!jobs.length && !selected.length}><Icon name="check"/> Finalizar PRESUPUESTO</button>
+          <button className="primary pdf-button" onClick={generatePdf} disabled={!finalized}><Icon name="download"/> Generar presupuesto en PDF</button>
           <p className="disclaimer">El valor es estimativo y puede variar según requisitos técnicos. Consultanos para confirmar el trabajo.</p>
         </aside>
       </div>

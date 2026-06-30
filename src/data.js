@@ -1,7 +1,7 @@
 export const profiles = {
   publico: { label: 'Público' },
   disenadores: { label: 'Diseñadores' },
-  gremio: { label: 'Gremio' },
+  gremio: { label: 'Imprenta' },
 }
 
 // Tarifario transcripto de las listas PDF del 20/05/2026.
@@ -81,7 +81,7 @@ export const materials = [
   { id:'alto-impacto', name:'Alto impacto 1 mm', category:'Materiales rígidos', unit:'m²', independent:true, prices:prices(25580,null,31970,null,41560,null), desc:'Placa plástica flexible' },
   { id:'foam', name:'Foam Board 5 mm', category:'Materiales rígidos', unit:'m²', independent:true, prices:prices(12030,null,15040,null,19550,null), desc:'Placa ultraliviana para interior' },
   { id:'corrugado2', name:'Corrugado plástico 2 mm', category:'Materiales rígidos', unit:'m²', independent:true, prices:prices(10430,null,13030,null,16940,null), desc:'Placa económica y resistente' },
-  { id:'corrugado4', name:'Corrugado plástico 4 mm', category:'Materiales rígidos', unit:'m²', independent:true, prices:prices(12780,null,null,null,null,null), desc:'Placa corrugada de 4 mm; figura sólo en lista Gremio' },
+  { id:'corrugado4', name:'Corrugado plástico 4 mm', category:'Materiales rígidos', unit:'m²', independent:true, prices:prices(12780,null,null,null,null,null), desc:'Placa corrugada de 4 mm; figura sólo en lista Imprenta' },
 
   // Portabanners sin impresión
   { id:'tensores', name:'2 tensores reforzados', category:'Portabanners sin impresión', unit:'u.', fixed:true, independent:true, prices:prices(34720,null,43400,null,56420,null), desc:'Estructura con dos tensores' },
