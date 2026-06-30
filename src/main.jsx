@@ -35,7 +35,7 @@ function Icon({ name, size = 20 }) {
 
 function App() {
   const [profile, setProfile] = useState('publico')
-  const [selectedIds, setSelectedIds] = useState(['vinilo-promo'])
+  const [selectedIds, setSelectedIds] = useState([''])
   const [search, setSearch] = useState('')
   const [width, setWidth] = useState(100)
   const [height, setHeight] = useState(100)
