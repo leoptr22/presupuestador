@@ -280,8 +280,7 @@ function App() {
     doc.text('El valor es estimativo y puede variar según los requisitos técnicos. Consultanos para confirmar el trabajo.', margin, y + 5)
     addPageNumber()
 
-    const safeName = customer.name.trim().replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]+/g, '-').replace(/^-|-$/g, '') || 'cliente'
-    doc.save(`presupuesto-rojas-${safeName}.pdf`)
+    doc.save('Presupuesto Rojas impresiones Gran Formato.pdf')
   }
 
   return <div className="app-shell">
@@ -358,7 +357,7 @@ function App() {
         </section>
 
         <aside className="quote">
-          <div className="quote-head"><span><small>PRESUPUESTO CONBINADO</small><b>{jobs.length ? `${jobs.length} trabajos agregados` : 'Trabajo actual'}</b></span><i>ARS</i></div>
+          <div className="quote-head"><span><small>PRESUPUESTO CONJUNTO</small><b>{jobs.length ? `${jobs.length} trabajos agregados` : 'Trabajo actual'}</b></span><i>ARS</i></div>
           <div className="preview"><span className="preview-art"><img src="/logo-rojas.png" alt="Rojas Impresiones" /></span><div><small>{finalized ? 'PRESUPUESTO FINALIZADO' : 'BORRADOR EN ARMADO'}</small><b>{jobs.length ? `${jobs.length} ${jobs.length === 1 ? 'trabajo' : 'trabajos'} en conjunto` : `${selected.length} componentes`}</b><p>{jobs.length ? `Total parcial · ${money.format(combinedTotal)}` : `${technologyLabel}${hasAreaItems ? ` · ${width || 0} × ${height || 0} cm` : ''}${hasLinearItems ? ` · ${formatNumber(calc.ml)} ml` : ''}`}</p></div></div>
 
           <div className="line-items">
@@ -401,7 +400,7 @@ function App() {
           <div className="total"><span><small>{finalized ? 'TOTAL FINAL' : 'TOTAL EN ARMADO'}</small><b>{money.format(jobs.length ? combinedTotal : calc.total)}</b></span><small>{finalized ? 'Listo para enviar' : 'Agregá y finalizá'}</small></div>
           {quoteIsImprenta && <p className="vat-note">Más IVA</p>}
           <p className="validity"><Icon name="check" size={16}/> Sin mínimo automático: se calcula por medida real</p>
-          <button className="primary finalize" onClick={finalizeQuote} disabled={!jobs.length && !selected.length}><Icon name="check"/> Finalizar PRESUPUESTO</button>
+          <button className="primary finalize" onClick={finalizeQuote} disabled={!jobs.length && !selected.length}><Icon name="check"/> Finalizar presupuesto conjunto</button>
           <button className="primary pdf-button" onClick={generatePdf} disabled={!finalized}><Icon name="download"/> Generar presupuesto en PDF</button>
           <p className="disclaimer">El valor es estimativo y puede variar según requisitos técnicos. Consultanos para confirmar el trabajo.</p>
         </aside>
