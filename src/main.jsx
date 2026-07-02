@@ -33,6 +33,70 @@ function Icon({ name, size = 20 }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
 }
 
+
+
+// calculador de stickers por plancha 50x50 cm
+function StickerSheetCalculator({ open, onClose }) {
+  const [stickerBase, setStickerBase] = useState('')
+  const [stickerHeight, setStickerHeight] = useState('')
+  const [cutType, setCutType] = useState('medio')
+
+  if (!open) return null
+
+  const extraMm = cutType === 'profundo' ? 3 : 1
+  const base = Math.max(Number(stickerBase) || 0, 0)
+  const height = Math.max(Number(stickerHeight) || 0, 0)
+  const effectiveBase = base > 0 ? base + extraMm / 10 : 0
+  const effectiveHeight = height > 0 ? height + extraMm / 10 : 0
+  const columns = base > 0 ? Math.floor(50 / effectiveBase) : 0
+  const rows = height > 0 ? Math.floor(50 / effectiveHeight) : 0
+  const total = columns * rows
+  const usedArea = total * effectiveBase * effectiveHeight
+  const utilization = total > 0 ? Math.min((usedArea / 2500) * 100, 100) : 0
+
+  return <div className="sticker-modal-backdrop" onClick={onClose}>
+    <section className="sticker-modal" role="dialog" aria-modal="true" aria-labelledby="sticker-calculator-title" onClick={event => event.stopPropagation()}>
+      <button className="sticker-modal-close" type="button" aria-label="Cerrar calculador" onClick={onClose}>×</button>
+      <div className="sticker-modal-heading">
+        <span><Icon name="ruler" size={22}/></span>
+        <div><small>STICKERS / ETIQUETAS</small><h2 id="sticker-calculator-title">Stickers por plancha</h2><p>Calculá cuántos stickers entran en una plancha fija de 50 × 50 cm.</p></div>
+      </div>
+
+      <div className="sticker-calculator-grid">
+        <div className="sticker-controls">
+          <h3>Medida del sticker</h3>
+          <div className="sticker-measures">
+            <label>Base <span><input type="number" min="0" step="0.1" value={stickerBase} onChange={event => setStickerBase(event.target.value)} placeholder="Ingresar"/><b>cm</b></span></label>
+            <i>×</i>
+            <label>Altura <span><input type="number" min="0" step="0.1" value={stickerHeight} onChange={event => setStickerHeight(event.target.value)} placeholder="Ingresar"/><b>cm</b></span></label>
+          </div>
+
+          <h3>Tipo de corte</h3>
+          <div className="sticker-cut-options">
+            <button type="button" className={cutType === 'medio' ? 'selected' : ''} onClick={() => setCutType('medio')}><span>Medio corte</span><small>Suma 1 mm a la base y a la altura</small></button>
+            <button type="button" className={cutType === 'profundo' ? 'selected' : ''} onClick={() => setCutType('profundo')}><span>Corte profundo</span><small>Suma 3 mm a la base y a la altura</small></button>
+          </div>
+          <p className="sticker-effective-size">Medida utilizada para el cálculo: <b>{formatNumber(effectiveBase)} × {formatNumber(effectiveHeight)} cm</b></p>
+        </div>
+
+        <div className="sticker-result">
+          <div className="sheet-badge">PLANCHA <b>50 × 50 cm</b></div>
+          {base > 0 && height > 0 ? <>
+            <strong>{total}</strong>
+            <span>stickers por plancha</span>
+            <dl>
+              <div><dt>Columnas</dt><dd>{columns}</dd></div>
+              <div><dt>Filas</dt><dd>{rows}</dd></div>
+              <div><dt>Aprovechamiento</dt><dd>{formatNumber(utilization)}%</dd></div>
+            </dl>
+            {total === 0 && <p className="sticker-alert">La medida resultante supera el tamaño de la plancha.</p>}
+          </> : <div className="sticker-empty-result"><Icon name="cube" size={30}/><p>Ingresá la base y la altura para ver el resultado.</p></div>}
+        </div>
+      </div>
+    </section>
+  </div>
+}
+
 function App() {
   const [profile, setProfile] = useState('publico')
   const [selectedIds, setSelectedIds] = useState([''])
@@ -47,6 +111,7 @@ function App() {
   const [finalized, setFinalized] = useState(false)
   const [customer, setCustomer] = useState({ name: '', phone: '', email: '', cuit: '' })
   const [formErrors, setFormErrors] = useState({})
+  const [stickerCalculatorOpen, setStickerCalculatorOpen] = useState(false)
 
   const selected = useMemo(() => selectedIds.map(id => materials.find(m => m.id === id)).filter(Boolean), [selectedIds])
   const hasAreaItems = selected.some(item => !item.fixed && item.billing !== 'linear')
@@ -300,7 +365,7 @@ function App() {
 
     <main>
       <section className="intro">
-        <div><p className="eyebrow">OBTENÉ UNA COTIZACIÓN ESTIMADA DE TU TRABAJO EN GRAN FORMATO</p><h1>Armá tu proyecto, <em>paso a paso.</em></h1><p>Agregá cada parte al presupuesto conjunto y finalizalo cuando esté completo.</p></div>
+        <div><p className="eyebrow">OBTENÉ UNA COTIZACIÓN ESTIMADA DE TU TRABAJO EN GRAN FORMATO</p><h1>Armá tu proyecto, <em>paso a paso.</em></h1><p>Agregá cada parte al presupuesto conjunto y finalizalo cuando esté completo.</p><button className="sticker-tool-trigger" type="button" onClick={() => setStickerCalculatorOpen(true)}><Icon name="ruler" size={17}/> Calcular stickers por plancha</button></div>
         <div className="step-line" aria-label="Pasos"><span className="active">1 <b>Trabajo</b></span><i></i><span className="active">2 <b>Agregar</b></span><i></i><span className={finalized ? 'active' : ''}>3 <b>Finalizar</b></span></div>
       </section>
 
@@ -409,6 +474,7 @@ function App() {
         </aside>
       </div>
     </main>
+    <StickerSheetCalculator open={stickerCalculatorOpen} onClose={() => setStickerCalculatorOpen(false)} />
     <footer><span>ROJAS IMPRESIONES · GRAN FORMATO</span><span>Lista actualizada 20/05/2026</span></footer>
   </div>
 }
