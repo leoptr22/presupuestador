@@ -24,6 +24,7 @@ function Icon({ name, size = 20 }) {
     ruler: <><path d="M3 21 21 3l-4-1-2 2 2 2-2 2-2-2-2 2 2 2-2 2-2-2-2 2 2 2-4 4Z"/></>,
     cube: <><path d="m21 16-9 5-9-5V8l9-5 9 5Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></>,
     copy: <><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>,
+    external: <><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></>,
     download: <><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/></>,
     check: <path d="m5 12 4 4L19 6"/>,
     layers: <><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/></>,
@@ -36,6 +37,12 @@ const stickerSheetOptions = [
   { id: '50x50', label: '50 × 50 cm', width: 50, height: 50 },
   { id: 'super-a3', label: 'Super A3', detail: '32 × 45 cm', width: 32, height: 45 },
 ]
+
+const profileDetails = {
+  publico: 'Precio final orientativo',
+  disenadores: 'Lista profesional',
+  gremio: 'Precios más IVA',
+}
 
 // calculador de stickers por plancha
 function StickerSheetCalculator({ open, onClose }) {
@@ -210,6 +217,22 @@ function App() {
   function clearJobs() {
     setJobs([])
     setFinalized(false)
+  }
+
+  function clearAllData() {
+    setSelectedIds([''])
+    setSearch('')
+    setWidth(100)
+    setHeight(100)
+    setLinearMeters(1)
+    setQuantity(1)
+    setTechnology('eco')
+    setUvMode('cmyk')
+    setJobs([])
+    setFinalized(false)
+    setCustomer({ name: '', phone: '', email: '', cuit: '' })
+    setFormErrors({})
+    setCopyStatus('')
   }
 
   function finalizeQuote() {
@@ -422,24 +445,32 @@ function App() {
   return <div className="app-shell">
     <header className="topbar">
       <a className="brand" href="#" aria-label="Rojas Impresiones"><span className="brand-logo" role="img" aria-label="Logo Rojas Impresiones"></span></a>
-      <div className="top-title"><span></span> PRESUPUESTADOR GRAN FORMATO</div>
-      <div className="profile-picker">
-        <span>Lista de precios</span>
-        <div className="profile-tabs" role="tablist" aria-label="Lista de precios">
-          {Object.entries(profiles).map(([key, item]) => (
-            <button key={key} type="button" className={`profile-tab-${key} ${profile === key ? 'active' : ''}`} onClick={() => { setProfile(key); setFinalized(false) }}>
-              {item.label}
-            </button>
-          ))}
-        </div>
+      <div className="top-title"><span></span><div><b>Presupuestador</b><small>Gran formato</small></div></div>
+      <div className="top-actions">
+        <a className="nav-action outline" href="https://presupuestador-impresiones.vercel.app"><Icon name="external" size={17}/> Impresiones</a>
+        <button className="nav-action outline" type="button" onClick={clearAllData}><Icon name="trash" size={16}/> Limpiar datos</button>
       </div>
-      <a className="nav-link-button" href="https://presupuestador-impresiones.vercel.app">Presupuestador impresiones</a>
     </header>
 
     <main>
       <section className="intro">
-        <div><p className="eyebrow">OBTENÉ UNA COTIZACIÓN ESTIMADA DE TU TRABAJO EN GRAN FORMATO</p><h1>Armá tu proyecto, <em>paso a paso.</em></h1><p>Agregá cada parte al presupuesto conjunto y finalizalo cuando esté completo.</p><button className="sticker-tool-trigger" type="button" onClick={() => setStickerCalculatorOpen(true)}><Icon name="ruler" size={17}/> Calcular stickers por plancha</button></div>
-        <div className="step-line" aria-label="Pasos"><span className="active">1 <b>Trabajo</b></span><i></i><span className="active">2 <b>Agregar</b></span><i></i><span className={finalized ? 'active' : ''}>3 <b>Finalizar</b></span></div>
+        <div><p className="eyebrow">IMPRESIONES</p><h1>Presupuestador para <em>Gran Formato</em></h1><p>Obtené una cotización estimada de tu trabajo en Gran Formato.</p></div>
+        <button className="sticker-tool-trigger" type="button" onClick={() => setStickerCalculatorOpen(true)}><Icon name="ruler" size={17}/> Stickers</button>
+      </section>
+
+      <section className="profile-panel">
+        <div className="profile-panel-head">
+          <span>00</span>
+          <div><h2>Perfil de precio</h2><p>El perfil afecta todos los ítems que se agreguen desde ahora.</p></div>
+        </div>
+        <div className="profile-tabs" role="tablist" aria-label="Lista de precios">
+          {Object.entries(profiles).map(([key, item]) => (
+            <button key={key} type="button" className={`profile-tab-${key} ${profile === key ? 'active' : ''}`} onClick={() => { setProfile(key); setFinalized(false) }}>
+              <b>{item.label}</b>
+              <small>{profileDetails[key]}</small>
+            </button>
+          ))}
+        </div>
       </section>
 
       <div className="workspace">
