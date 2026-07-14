@@ -32,34 +32,38 @@ function Icon({ name, size = 20 }) {
   }
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
 }
+const stickerSheetOptions = [
+  { id: '50x50', label: '50 × 50 cm', width: 50, height: 50 },
+  { id: 'super-a3', label: 'Super A3', detail: '32 × 45 cm', width: 32, height: 45 },
+]
 
-
-
-// calculador de stickers por plancha 50x50 cm
+// calculador de stickers por plancha
 function StickerSheetCalculator({ open, onClose }) {
   const [stickerBase, setStickerBase] = useState('')
   const [stickerHeight, setStickerHeight] = useState('')
   const [cutType, setCutType] = useState('medio')
+  const [sheetType, setSheetType] = useState('50x50')
 
   if (!open) return null
 
+  const sheet = stickerSheetOptions.find(option => option.id === sheetType) || stickerSheetOptions[0]
   const extraMm = cutType === 'profundo' ? 3 : 1
   const base = Math.max(Number(stickerBase) || 0, 0)
   const height = Math.max(Number(stickerHeight) || 0, 0)
   const effectiveBase = base > 0 ? base + extraMm / 10 : 0
   const effectiveHeight = height > 0 ? height + extraMm / 10 : 0
-  const columns = base > 0 ? Math.floor(50 / effectiveBase) : 0
-  const rows = height > 0 ? Math.floor(50 / effectiveHeight) : 0
+  const columns = base > 0 ? Math.floor(sheet.width / effectiveBase) : 0
+  const rows = height > 0 ? Math.floor(sheet.height / effectiveHeight) : 0
   const total = columns * rows
   const usedArea = total * effectiveBase * effectiveHeight
-  const utilization = total > 0 ? Math.min((usedArea / 2500) * 100, 100) : 0
+  const utilization = total > 0 ? Math.min((usedArea / (sheet.width * sheet.height)) * 100, 100) : 0
 
   return <div className="sticker-modal-backdrop" onClick={onClose}>
     <section className="sticker-modal" role="dialog" aria-modal="true" aria-labelledby="sticker-calculator-title" onClick={event => event.stopPropagation()}>
       <button className="sticker-modal-close" type="button" aria-label="Cerrar calculador" onClick={onClose}>×</button>
       <div className="sticker-modal-heading">
         <span><Icon name="ruler" size={22}/></span>
-        <div><small>STICKERS / ETIQUETAS</small><h2 id="sticker-calculator-title">Stickers por plancha</h2><p>Calculá cuántos stickers entran en una plancha fija de 50 × 50 cm.</p></div>
+        <div><small>STICKERS / ETIQUETAS</small><h2 id="sticker-calculator-title">Stickers por plancha</h2><p>Calculá cuántos stickers entran según el tamaño de plancha elegido.</p></div>
       </div>
 
       <div className="sticker-calculator-grid">
@@ -71,6 +75,16 @@ function StickerSheetCalculator({ open, onClose }) {
             <label>Altura <span><input type="number" min="0" step="0.1" value={stickerHeight} onChange={event => setStickerHeight(event.target.value)} placeholder="Ingresar"/><b>cm</b></span></label>
           </div>
 
+          <h3>Tamaño de plancha</h3>
+          <div className="sticker-sheet-options">
+            {stickerSheetOptions.map(option => (
+              <button key={option.id} type="button" className={sheetType === option.id ? 'selected' : ''} onClick={() => setSheetType(option.id)}>
+                <span>{option.label}</span>
+                <small>{option.detail || option.label}</small>
+              </button>
+            ))}
+          </div>
+
           <h3>Tipo de corte</h3>
           <div className="sticker-cut-options">
             <button type="button" className={cutType === 'medio' ? 'selected' : ''} onClick={() => setCutType('medio')}><span>Medio corte</span><small>Suma 1 mm a la base y a la altura</small></button>
@@ -80,7 +94,7 @@ function StickerSheetCalculator({ open, onClose }) {
         </div>
 
         <div className="sticker-result">
-          <div className="sheet-badge">PLANCHA <b>50 × 50 cm</b></div>
+          <div className="sheet-badge">PLANCHA <b>{sheet.label}{sheet.detail ? ` · ${sheet.detail}` : ''}</b></div>
           {base > 0 && height > 0 ? <>
             <strong>{total}</strong>
             <span>stickers por plancha</span>
@@ -112,6 +126,7 @@ function App() {
   const [customer, setCustomer] = useState({ name: '', phone: '', email: '', cuit: '' })
   const [formErrors, setFormErrors] = useState({})
   const [stickerCalculatorOpen, setStickerCalculatorOpen] = useState(false)
+  const [copyStatus, setCopyStatus] = useState('')
 
   const selected = useMemo(() => selectedIds.map(id => materials.find(m => m.id === id)).filter(Boolean), [selectedIds])
   const hasAreaItems = selected.some(item => !item.fixed && item.billing !== 'linear')
@@ -201,6 +216,59 @@ function App() {
     if (!jobs.length && !selected.length) return
     if (!validateCustomer()) return
     setFinalized(true)
+  }
+
+  function buildQuoteText() {
+    const total = sourceJobs.reduce((sum, job) => sum + job.total, 0)
+    const profileNames = [...new Set(sourceJobs.map(job => job.profileLabel))].join(' / ')
+    const date = new Intl.DateTimeFormat('es-AR').format(new Date())
+    const textLines = [
+      'Rojas Impresiones · Gran Formato',
+      'Presupuesto estimado',
+      `Fecha: ${date}`,
+      `Perfil: ${profileNames}`,
+      quoteIsImprenta ? 'Condición: MÁS IVA' : null,
+      '',
+      'Datos del cliente:',
+      `Nombre y apellido: ${customer.name.trim()}`,
+      `Teléfono: ${customer.phone.trim()}`,
+      customer.email.trim() ? `Email: ${customer.email.trim()}` : null,
+      quoteIsImprenta ? `CUIT: ${customer.cuit.trim()}` : null,
+      '',
+    ].filter(Boolean)
+
+    sourceJobs.forEach((job, index) => {
+      const hasArea = job.lines.some(line => !line.fixed && line.billing !== 'linear')
+      const hasLinear = job.lines.some(line => line.billing === 'linear')
+      textLines.push(`Trabajo ${index + 1}`)
+      textLines.push(`Perfil: ${job.profileLabel}`)
+      textLines.push(`Impresión: ${job.technologyLabel}`)
+      if (hasArea) textLines.push(`Medida: ${job.width} × ${job.height} cm (${formatNumber(job.area)} m²) · Cantidad: ${job.q}`)
+      else textLines.push(`Cantidad: ${job.q}`)
+      if (hasLinear) textLines.push(`Metros lineales: ${formatNumber(job.ml)} ml`)
+      job.lines.forEach(line => {
+        textLines.push(`- ${line.name}: ${line.billingLabel} · ${line.lineTotal == null ? 'Consultar' : money.format(line.lineTotal)}`)
+      })
+      textLines.push(`Subtotal trabajo ${index + 1}: ${money.format(job.total)}`)
+      textLines.push('')
+    })
+
+    textLines.push(`TOTAL GENERAL: ${money.format(total)}${quoteIsImprenta ? ' · MÁS IVA' : ''}`)
+    textLines.push('El valor es estimativo y puede variar según requisitos técnicos. Consultanos para confirmar el trabajo.')
+    return textLines.join('\n')
+  }
+
+  async function copyQuoteText() {
+    if (!jobs.length && !selected.length) return
+    if (!validateCustomer()) return
+    const text = buildQuoteText()
+    try {
+      await navigator.clipboard.writeText(text)
+      setFinalized(true)
+      setCopyStatus('Presupuesto copiado. Listo para pegar en WhatsApp o mail.')
+    } catch {
+      setCopyStatus('No se pudo copiar automáticamente. Probá desde un navegador actualizado.')
+    }
   }
 
   async function logoDataUrl() {
@@ -356,11 +424,16 @@ function App() {
       <a className="brand" href="#" aria-label="Rojas Impresiones"><span className="brand-logo" role="img" aria-label="Logo Rojas Impresiones"></span></a>
       <div className="top-title"><span></span> PRESUPUESTADOR GRAN FORMATO</div>
       <div className="profile-picker">
-        <label htmlFor="profile">Lista de precios</label>
-        <select id="profile" value={profile} onChange={e => { setProfile(e.target.value); setFinalized(false) }}>
-          {Object.entries(profiles).map(([key, item]) => <option key={key} value={key}>{item.label}</option>)}
-        </select>
+        <span>Lista de precios</span>
+        <div className="profile-tabs" role="tablist" aria-label="Lista de precios">
+          {Object.entries(profiles).map(([key, item]) => (
+            <button key={key} type="button" className={`profile-tab-${key} ${profile === key ? 'active' : ''}`} onClick={() => { setProfile(key); setFinalized(false) }}>
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
+      <a className="nav-link-button" href="https://presupuestador-impresiones.vercel.app">Presupuestador impresiones</a>
     </header>
 
     <main>
@@ -470,6 +543,8 @@ function App() {
           <p className="validity"><Icon name="check" size={16}/> Sin mínimo automático: se calcula por medida real</p>
           <button className="primary finalize" onClick={finalizeQuote} disabled={!jobs.length && !selected.length}><Icon name="check"/> Finalizar presupuesto conjunto</button>
           <button className="primary pdf-button" onClick={generatePdf} disabled={!finalized}><Icon name="download"/> Generar presupuesto en PDF</button>
+          <button className="primary copy-button" onClick={copyQuoteText} disabled={!jobs.length && !selected.length}><Icon name="copy"/> Copiar presupuesto para WhatsApp o mail</button>
+          {copyStatus && <p className="copy-status">{copyStatus}</p>}
           <p className="disclaimer">El valor es estimativo y puede variar según requisitos técnicos. Consultanos para confirmar el trabajo.</p>
         </aside>
       </div>
