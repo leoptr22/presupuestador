@@ -448,6 +448,7 @@ function App() {
       <div className="top-title"><span></span><div><b>Presupuestador</b><small>Gran formato</small></div></div>
       <div className="top-actions">
         <a className="nav-action outline" href="https://presupuestador-impresiones.vercel.app"><Icon name="external" size={17}/> Impresiones</a>
+        <a className="nav-action outline" href="https://tablero-produccion-gran-formato.vercel.app/"><Icon name="layers" size={17}/> Tablero de producción</a>
         <button className="nav-action outline" type="button" onClick={clearAllData}><Icon name="trash" size={16}/> Limpiar datos</button>
       </div>
     </header>
